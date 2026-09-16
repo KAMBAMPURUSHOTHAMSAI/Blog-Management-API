@@ -10,12 +10,14 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 class UserCreate(BaseModel):
     username: str = Field(
         min_length=3,
-        max_length=50
+        max_length=50,
     )
+
     email: EmailStr
+
     password: str = Field(
         min_length=6,
-        max_length=100
+        max_length=100,
     )
 
 
@@ -24,7 +26,9 @@ class UserResponse(BaseModel):
     username: str
     email: EmailStr
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
 
 
 # =========================
@@ -34,11 +38,12 @@ class UserResponse(BaseModel):
 class LoginRequest(BaseModel):
     username: str = Field(
         min_length=3,
-        max_length=50
+        max_length=50,
     )
+
     password: str = Field(
         min_length=6,
-        max_length=100
+        max_length=100,
     )
 
 
@@ -54,11 +59,12 @@ class Token(BaseModel):
 class PostCreate(BaseModel):
     title: str = Field(
         min_length=1,
-        max_length=200
+        max_length=200,
     )
+
     content: str = Field(
         min_length=1,
-        max_length=10000
+        max_length=10000,
     )
 
 
@@ -66,12 +72,13 @@ class PostUpdate(BaseModel):
     title: str | None = Field(
         default=None,
         min_length=1,
-        max_length=200
+        max_length=200,
     )
+
     content: str | None = Field(
         default=None,
         min_length=1,
-        max_length=10000
+        max_length=10000,
     )
 
 
@@ -79,10 +86,26 @@ class PostResponse(BaseModel):
     id: int
     title: str
     content: str
+    image: str | None = None
     author_id: int
     created_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
+
+
+# =========================
+# Paginated Post Response
+# =========================
+
+class PaginatedPostsResponse(BaseModel):
+    page: int
+    limit: int
+    total_count: int
+    total_pages: int
+    search: str | None = None
+    posts: list[PostResponse]
 
 
 # =========================
@@ -92,7 +115,7 @@ class PostResponse(BaseModel):
 class CommentCreate(BaseModel):
     text: str = Field(
         min_length=1,
-        max_length=2000
+        max_length=2000,
     )
 
 
@@ -103,4 +126,6 @@ class CommentResponse(BaseModel):
     text: str
     created_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+    )

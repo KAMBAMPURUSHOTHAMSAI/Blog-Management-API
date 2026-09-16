@@ -1,0 +1,99 @@
+{
+  "info": {
+    "_postman_id": "d9c7e1a4-0c4e-4f6f-8f6b-blog-api-v2",
+    "name": "Blog Management API - Image Search Pagination",
+    "description": "Postman collection for image uploads, post update with image, pagination, search, and combined search + pagination.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {"key": "baseUrl", "value": "http://127.0.0.1:8000"},
+    {"key": "username", "value": "john"},
+    {"key": "password", "value": "password123"},
+    {"key": "email", "value": "john@gmail.com"},
+    {"key": "token", "value": ""},
+    {"key": "postId", "value": "1"},
+    {"key": "imagePath", "value": "C:\\path\\to\\sample.png"}
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"username\": \"{{username}}\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}", "options": {"raw": {"language": "json"}}},
+            "url": "{{baseUrl}}/auth/register"
+          }
+        },
+        {
+          "name": "Login",
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": [
+            "pm.test('Login successful', function () { pm.response.to.have.status(200); });",
+            "const json = pm.response.json();",
+            "if (json.access_token) pm.collectionVariables.set('token', json.access_token);"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {"mode": "urlencoded", "urlencoded": [
+              {"key": "grant_type", "value": "password", "type": "text"},
+              {"key": "username", "value": "{{username}}", "type": "text"},
+              {"key": "password", "value": "{{password}}", "type": "text"},
+              {"key": "scope", "value": "", "type": "text"},
+              {"key": "client_id", "value": "", "type": "text"},
+              {"key": "client_secret", "value": "", "type": "text"}
+            ]},
+            "url": "{{baseUrl}}/auth/login"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Image Upload",
+      "item": [
+        {
+          "name": "Create Post with Image",
+          "event": [{"listen": "test", "script": {"type": "text", "exec": [
+            "pm.test('Post created', function () { pm.response.to.have.status(201); });",
+            "const json = pm.response.json();",
+            "if (json.id) pm.collectionVariables.set('postId', String(json.id));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+            "body": {"mode": "formdata", "formdata": [
+              {"key": "title", "value": "FastAPI Image Upload Test", "type": "text"},
+              {"key": "content", "value": "Testing image upload with Postman.", "type": "text"},
+              {"key": "image", "type": "file", "src": "{{imagePath}}"}
+            ]},
+            "url": "{{baseUrl}}/posts/create"
+          }
+        },
+        {
+          "name": "Update Post with Image",
+          "request": {
+            "method": "PUT",
+            "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+            "body": {"mode": "formdata", "formdata": [
+              {"key": "title", "value": "Updated Image Post", "type": "text"},
+              {"key": "content", "value": "Updated content with a replacement image.", "type": "text"},
+              {"key": "image", "type": "file", "src": "{{imagePath}}"}
+            ]},
+            "url": "{{baseUrl}}/posts/{{postId}}/update"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Search & Pagination",
+      "item": [
+        {"name": "List Posts - Pagination", "request": {"method": "GET", "header": [], "url": "{{baseUrl}}/posts/?page=1&limit=10"}},
+        {"name": "List Posts - Search", "request": {"method": "GET", "header": [], "url": "{{baseUrl}}/posts/?search=FastAPI"}},
+        {"name": "List Posts - Search + Pagination", "request": {"method": "GET", "header": [], "url": "{{baseUrl}}/posts/?search=FastAPI&page=1&limit=2"}},
+        {"name": "Get Single Post", "request": {"method": "GET", "header": [], "url": "{{baseUrl}}/posts/{{postId}}"}}
+      ]
+    }
+  ]
+}
