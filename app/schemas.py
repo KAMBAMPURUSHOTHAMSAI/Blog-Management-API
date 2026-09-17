@@ -3,9 +3,9 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
-# =========================
+# =========================================================
 # User Schemas
-# =========================
+# =========================================================
 
 class UserCreate(BaseModel):
     username: str = Field(
@@ -31,9 +31,9 @@ class UserResponse(BaseModel):
     )
 
 
-# =========================
+# =========================================================
 # Authentication Schemas
-# =========================
+# =========================================================
 
 class LoginRequest(BaseModel):
     username: str = Field(
@@ -52,9 +52,9 @@ class Token(BaseModel):
     token_type: str
 
 
-# =========================
+# =========================================================
 # Post Schemas
-# =========================
+# =========================================================
 
 class PostCreate(BaseModel):
     title: str = Field(
@@ -87,6 +87,9 @@ class PostResponse(BaseModel):
     title: str
     content: str
     image: str | None = None
+    images: list[str] = Field(
+        default_factory=list
+    )
     author_id: int
     created_at: datetime
 
@@ -95,9 +98,9 @@ class PostResponse(BaseModel):
     )
 
 
-# =========================
+# =========================================================
 # Paginated Post Response
-# =========================
+# =========================================================
 
 class PaginatedPostsResponse(BaseModel):
     page: int
@@ -108,9 +111,9 @@ class PaginatedPostsResponse(BaseModel):
     posts: list[PostResponse]
 
 
-# =========================
+# =========================================================
 # Comment Schemas
-# =========================
+# =========================================================
 
 class CommentCreate(BaseModel):
     text: str = Field(
@@ -129,3 +132,81 @@ class CommentResponse(BaseModel):
     model_config = ConfigDict(
         from_attributes=True,
     )
+
+
+# =========================================================
+# Subscription Plan Schemas
+# =========================================================
+
+class SubscriptionPlanResponse(BaseModel):
+    id: int
+    name: str
+    price: float
+
+    # None means unlimited
+    max_posts: int | None
+    max_images_per_post: int | None
+    max_likes: int | None
+    max_comments: int | None
+
+    duration_days: int
+    is_active: bool
+    created_at: datetime
+
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
+
+
+# =========================================================
+# Subscribe Request Schema
+# =========================================================
+
+class SubscribeRequest(BaseModel):
+    plan_id: int = Field(
+        gt=0,
+        description="ID of the subscription plan",
+    )
+
+
+# =========================================================
+# Billing History Response
+# =========================================================
+
+class BillingHistoryResponse(BaseModel):
+    id: int
+
+    user_id: int
+    plan_id: int | None
+
+    price: float
+
+    start_date: datetime
+    end_date: datetime
+
+    transaction_id: str
+
+    invoice_path: str | None = None
+
+    status: str
+    created_at: datetime
+
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
+
+
+# =========================================================
+# Subscription Response
+# =========================================================
+
+class SubscriptionResponse(BaseModel):
+    message: str
+
+    user_id: int
+    plan: SubscriptionPlanResponse
+
+    subscription_start_date: datetime | None
+    subscription_end_date: datetime | None
+
+    billing: BillingHistoryResponse | None = None

@@ -57,6 +57,34 @@ def like_post(
             detail="You already liked this post",
         )
 
+    # =========================
+    # Subscription Plan Check
+    # =========================
+
+    plan = current_user.get_active_plan()
+
+    if plan is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have an active subscription.",
+        )
+
+    # Count current user's active likes
+    current_like_count = (
+        db.query(Like)
+        .filter(
+            Like.user_id == current_user.id
+        )
+        .count()
+    )
+
+    # Check plan limit
+    if not plan.can_like(current_like_count):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You’ve reached your plan limit. Kindly upgrade your plan to continue.",
+        )
+
     # Create like
     like = Like(
         post_id=post_id,
@@ -68,6 +96,7 @@ def like_post(
     try:
         db.commit()
         db.refresh(like)
+
     except IntegrityError:
         db.rollback()
 

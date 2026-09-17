@@ -1,11 +1,25 @@
+from datetime import timedelta
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
-from app.auth import create_access_token, hash_password, verify_password
+from app.auth import (
+    create_access_token,
+    hash_password,
+    verify_password,
+)
 from app.database import get_db
-from app.models import User
-from app.schemas import Token, UserCreate, UserResponse
+from app.models import (
+    SubscriptionPlan,
+    User,
+    utc_now,
+)
+from app.schemas import (
+    Token,
+    UserCreate,
+    UserResponse,
+)
 
 
 router = APIRouter(
@@ -14,9 +28,9 @@ router = APIRouter(
 )
 
 
-# =========================
+# ============================================================
 # Register
-# =========================
+# ============================================================
 
 @router.post(
     "/register",
@@ -27,10 +41,15 @@ def register(
     user_data: UserCreate,
     db: Session = Depends(get_db),
 ):
-    # Check duplicate username
+    # ========================================================
+    # Check Duplicate Username
+    # ========================================================
+
     existing_username = (
         db.query(User)
-        .filter(User.username == user_data.username)
+        .filter(
+            User.username == user_data.username
+        )
         .first()
     )
 
@@ -40,10 +59,15 @@ def register(
             detail="Username already exists",
         )
 
-    # Check duplicate email
+    # ========================================================
+    # Check Duplicate Email
+    # ========================================================
+
     existing_email = (
         db.query(User)
-        .filter(User.email == user_data.email)
+        .filter(
+            User.email == user_data.email
+        )
         .first()
     )
 
@@ -53,25 +77,74 @@ def register(
             detail="Email already exists",
         )
 
-    # Hash password before storing
-    hashed_password = hash_password(user_data.password)
+    # ========================================================
+    # Find Basic Plan
+    # ========================================================
+
+    basic_plan = (
+        db.query(SubscriptionPlan)
+        .filter(
+            SubscriptionPlan.name == "Basic",
+            SubscriptionPlan.is_active == True,
+        )
+        .first()
+    )
+
+    if basic_plan is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=(
+                "Basic subscription plan is not available. "
+                "Please contact the administrator."
+            ),
+        )
+
+    # ========================================================
+    # Hash Password
+    # ========================================================
+
+    hashed_password = hash_password(
+        user_data.password
+    )
+
+    # ========================================================
+    # Create User
+    # ========================================================
+
+    start_date = utc_now()
+
+    end_date = (
+        start_date
+        + timedelta(
+            days=basic_plan.duration_days
+        )
+    )
 
     user = User(
         username=user_data.username,
         email=user_data.email,
         password=hashed_password,
+
+        # Automatically assign Basic plan
+        subscription_plan_id=basic_plan.id,
+
+        # Basic subscription validity
+        subscription_start_date=start_date,
+        subscription_end_date=end_date,
     )
 
     db.add(user)
+
     db.commit()
+
     db.refresh(user)
 
     return user
 
 
-# =========================
+# ============================================================
 # Login
-# =========================
+# ============================================================
 
 @router.post(
     "/login",
@@ -81,14 +154,22 @@ def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ):
-    # Find user by username
+    # ========================================================
+    # Find User by Username
+    # ========================================================
+
     user = (
         db.query(User)
-        .filter(User.username == form_data.username)
+        .filter(
+            User.username == form_data.username
+        )
         .first()
     )
 
-    # Verify credentials
+    # ========================================================
+    # Verify Credentials
+    # ========================================================
+
     if user is None or not verify_password(
         form_data.password,
         user.password,
@@ -101,8 +182,13 @@ def login(
             },
         )
 
-    # Create JWT token
-    access_token = create_access_token(user.id)
+    # ========================================================
+    # Create JWT Token
+    # ========================================================
+
+    access_token = create_access_token(
+        user.id
+    )
 
     return {
         "access_token": access_token,

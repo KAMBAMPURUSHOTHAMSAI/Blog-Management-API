@@ -43,7 +43,38 @@ def create_comment(
             detail="Post not found",
         )
 
-    # Create the comment
+    # =========================
+    # Subscription Plan Check
+    # =========================
+
+    plan = current_user.get_active_plan()
+
+    if plan is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have an active subscription.",
+        )
+
+    # Count current user's comments
+    current_comment_count = (
+        db.query(Comment)
+        .filter(
+            Comment.user_id == current_user.id
+        )
+        .count()
+    )
+
+    # Check plan limit
+    if not plan.can_comment(current_comment_count):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You’ve reached your plan limit. Kindly upgrade your plan to continue.",
+        )
+
+    # =========================
+    # Create Comment
+    # =========================
+
     comment = Comment(
         post_id=post.id,
         user_id=current_user.id,
