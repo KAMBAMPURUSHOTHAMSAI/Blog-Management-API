@@ -1,11 +1,21 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from datetime import datetime, timezone
+
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    HTTPException,
+    status,
+)
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.dependencies import get_current_user
-from app.email import send_like_notification
 from app.models import Like, Post, User
+from app.services.notification_service import (
+    send_like_notification,
+)
 
 
 router = APIRouter(
@@ -14,9 +24,9 @@ router = APIRouter(
 )
 
 
-# =========================
+# =========================================================
 # Like Post
-# =========================
+# =========================================================
 
 @router.post(
     "/{post_id}/like",
@@ -28,7 +38,10 @@ def like_post(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    # =====================================================
     # Check whether the post exists
+    # =====================================================
+
     post = (
         db.query(Post)
         .filter(Post.id == post_id)
@@ -41,7 +54,10 @@ def like_post(
             detail="Post not found",
         )
 
+    # =====================================================
     # Check whether this user already liked the post
+    # =====================================================
+
     existing_like = (
         db.query(Like)
         .filter(
@@ -57,19 +73,24 @@ def like_post(
             detail="You already liked this post",
         )
 
-    # =========================
+    # =====================================================
     # Subscription Plan Check
-    # =========================
+    # =====================================================
 
     plan = current_user.get_active_plan()
 
     if plan is None:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have an active subscription.",
+            detail=(
+                "You do not have an active subscription."
+            ),
         )
 
-    # Count current user's active likes
+    # =====================================================
+    # Count Current User's Active Likes
+    # =====================================================
+
     current_like_count = (
         db.query(Like)
         .filter(
@@ -78,14 +99,33 @@ def like_post(
         .count()
     )
 
-    # Check plan limit
-    if not plan.can_like(current_like_count):
+    # =====================================================
+    # Check Plan Limit
+    # =====================================================
+
+    if not plan.can_like(
+        current_like_count
+    ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You’ve reached your plan limit. Kindly upgrade your plan to continue.",
+            detail=(
+                "You’ve reached your plan limit. "
+                "Kindly upgrade your plan to continue."
+            ),
         )
 
-    # Create like
+    # =====================================================
+    # Capture Like Activity Timestamp
+    # =====================================================
+
+    activity_time = datetime.now(
+        timezone.utc
+    )
+
+    # =====================================================
+    # Create Like
+    # =====================================================
+
     like = Like(
         post_id=post_id,
         user_id=current_user.id,
@@ -105,12 +145,21 @@ def like_post(
             detail="You already liked this post",
         )
 
-    # Notify the post owner
+    # =====================================================
+    # Send Like Notification in Background
+    # =====================================================
+    #
+    # The database operation has already succeeded.
+    # Email sending therefore cannot block the main
+    # like request.
+    # =====================================================
+
     background_tasks.add_task(
         send_like_notification,
         post.author.email,
         post.title,
         current_user.username,
+        activity_time,
     )
 
     return {
@@ -118,9 +167,9 @@ def like_post(
     }
 
 
-# =========================
+# =========================================================
 # Unlike Post
-# =========================
+# =========================================================
 
 @router.delete(
     "/{post_id}/like",
@@ -130,7 +179,10 @@ def unlike_post(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    # =====================================================
     # Check whether the post exists
+    # =====================================================
+
     post = (
         db.query(Post)
         .filter(Post.id == post_id)
@@ -143,7 +195,10 @@ def unlike_post(
             detail="Post not found",
         )
 
-    # Find the current user's like
+    # =====================================================
+    # Find the Current User's Like
+    # =====================================================
+
     like = (
         db.query(Like)
         .filter(
@@ -159,7 +214,12 @@ def unlike_post(
             detail="You have not liked this post",
         )
 
+    # =====================================================
+    # Remove Like
+    # =====================================================
+
     db.delete(like)
+
     db.commit()
 
     return {

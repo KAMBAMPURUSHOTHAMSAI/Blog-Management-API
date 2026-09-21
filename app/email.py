@@ -1,115 +1,82 @@
-import logging
-import smtplib
-from email.message import EmailMessage
+from datetime import datetime, timezone
 
-from app.core.config import settings
+from app.services.email_service import send_email
+from app.services.notification_service import (
+    send_comment_notification as _send_comment_notification,
+    send_like_notification as _send_like_notification,
+)
 
 
-logger = logging.getLogger(__name__)
-
-
-def send_email(
-    to_email: str,
-    subject: str,
-    body: str,
-) -> None:
-    """
-    Send an email using the configured SMTP server.
-
-    If SMTP settings are not configured, the function skips
-    sending instead of breaking the API request.
-    """
-
-    # Skip email sending when SMTP is not configured.
-    if not (
-        settings.SMTP_HOST
-        and settings.SMTP_USERNAME
-        and settings.SMTP_PASSWORD
-        and settings.EMAIL_FROM
-    ):
-        logger.warning(
-            "SMTP is not configured. Email notification skipped."
-        )
-        return
-
-    message = EmailMessage()
-    message["Subject"] = subject
-    message["From"] = settings.EMAIL_FROM
-    message["To"] = to_email
-    message.set_content(body)
-
-    try:
-        with smtplib.SMTP_SSL(
-            settings.SMTP_HOST,
-            settings.SMTP_PORT,
-        ) as server:
-            server.login(
-                settings.SMTP_USERNAME,
-                settings.SMTP_PASSWORD,
-            )
-
-            server.send_message(message)
-
-        logger.info(
-            "Email sent successfully to %s",
-            to_email,
-        )
-
-    except Exception:
-        logger.exception(
-            "Failed to send email to %s",
-            to_email,
-        )
-
+# =========================================================
+# Backward-Compatible Comment Notification
+# =========================================================
 
 def send_comment_notification(
     owner_email: str,
     post_title: str,
     commenter_username: str,
     comment_text: str,
+    activity_time: datetime | None = None,
 ) -> None:
     """
-    Notify a post owner when someone comments on their post.
+    Backward-compatible wrapper for comment notifications.
+
+    Existing code can continue calling this function with
+    the old four arguments. New code can provide the exact
+    activity timestamp.
     """
 
-    subject = f"New comment on your post: {post_title}"
+    if activity_time is None:
+        activity_time = datetime.now(
+            timezone.utc
+        )
 
-    body = (
-        f"Hello,\n\n"
-        f"{commenter_username} commented on your post "
-        f"'{post_title}'.\n\n"
-        f"Comment:\n"
-        f"{comment_text}\n\n"
-        f"Blog Management API"
+    _send_comment_notification(
+        owner_email=owner_email,
+        post_title=post_title,
+        commenter_username=commenter_username,
+        comment_text=comment_text,
+        activity_time=activity_time,
     )
 
-    send_email(
-        to_email=owner_email,
-        subject=subject,
-        body=body,
-    )
 
+# =========================================================
+# Backward-Compatible Like Notification
+# =========================================================
 
 def send_like_notification(
     owner_email: str,
     post_title: str,
     liker_username: str,
+    activity_time: datetime | None = None,
 ) -> None:
     """
-    Notify a post owner when someone likes their post.
+    Backward-compatible wrapper for like notifications.
+
+    Existing code can continue calling this function with
+    the old three arguments. New code can provide the exact
+    activity timestamp.
     """
 
-    subject = f"New like on your post: {post_title}"
+    if activity_time is None:
+        activity_time = datetime.now(
+            timezone.utc
+        )
 
-    body = (
-        f"Hello,\n\n"
-        f"{liker_username} liked your post "
-        f"'{post_title}'.\n\n"
-        f"Blog Management API"
+    _send_like_notification(
+        owner_email=owner_email,
+        post_title=post_title,
+        liker_username=liker_username,
+        activity_time=activity_time,
     )
 
-    send_email(
-        to_email=owner_email,
-        subject=subject,
-        body=body,
-    )
+
+# =========================================================
+# Public Email Sender
+# =========================================================
+
+__all__ = [
+    "send_email",
+    "send_comment_notification",
+    "send_like_notification",
+]
