@@ -16,6 +16,10 @@ def send_email(
     """
     Send an email using the configured SMTP server.
 
+    Supports:
+    - SMTP over SSL
+    - SMTP with STARTTLS
+
     This function is intended to be called through
     FastAPI BackgroundTasks, so email sending does not
     block the main API response.
@@ -57,19 +61,58 @@ def send_email(
     # =====================================================
 
     try:
-        with smtplib.SMTP_SSL(
-            settings.SMTP_HOST,
-            settings.SMTP_PORT,
-        ) as server:
 
-            server.login(
-                settings.SMTP_USERNAME,
-                settings.SMTP_PASSWORD,
-            )
+        # -------------------------------------------------
+        # SMTP over SSL
+        # Example: Gmail SMTP port 465
+        # -------------------------------------------------
 
-            server.send_message(
-                message
-            )
+        if settings.SMTP_SSL:
+
+            with smtplib.SMTP_SSL(
+                settings.SMTP_HOST,
+                settings.SMTP_PORT,
+            ) as server:
+
+                server.login(
+                    settings.SMTP_USERNAME,
+                    settings.SMTP_PASSWORD,
+                )
+
+                server.send_message(
+                    message
+                )
+
+        # -------------------------------------------------
+        # Normal SMTP + STARTTLS
+        # Example: Mailtrap Sandbox port 2525
+        # -------------------------------------------------
+
+        else:
+
+            with smtplib.SMTP(
+                settings.SMTP_HOST,
+                settings.SMTP_PORT,
+            ) as server:
+
+                server.ehlo()
+
+                if settings.SMTP_TLS:
+                    server.starttls()
+                    server.ehlo()
+
+                server.login(
+                    settings.SMTP_USERNAME,
+                    settings.SMTP_PASSWORD,
+                )
+
+                server.send_message(
+                    message
+                )
+
+        # -------------------------------------------------
+        # Success Log
+        # -------------------------------------------------
 
         logger.info(
             "Email sent successfully to %s",
@@ -77,7 +120,8 @@ def send_email(
         )
 
     except Exception:
-        # Email failure must not break
+
+        # Email failure must never break
         # the main blog functionality.
         logger.exception(
             "Failed to send email to %s",
