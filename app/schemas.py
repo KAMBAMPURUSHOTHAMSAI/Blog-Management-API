@@ -87,9 +87,11 @@ class PostResponse(BaseModel):
     title: str
     content: str
     image: str | None = None
+
     images: list[str] = Field(
         default_factory=list
     )
+
     author_id: int
     created_at: datetime
 
@@ -210,3 +212,41 @@ class SubscriptionResponse(BaseModel):
     subscription_end_date: datetime | None
 
     billing: BillingHistoryResponse | None = None
+
+
+# =========================================================
+# User Dashboard Schemas
+# =========================================================
+
+class DashboardPostStats(BaseModel):
+    """
+    Statistics for a single post owned by the user.
+    """
+
+    post_id: int
+    title: str
+
+    likes_received: int
+    comments_received: int
+
+
+class DashboardResponse(BaseModel):
+    """
+    Personalized dashboard statistics for the
+    authenticated user.
+    """
+
+    user_id: int
+    username: str
+
+    total_posts: int
+    total_comments: int
+    total_likes_received: int
+
+    # Post views are not currently tracked in the system.
+    # None means view tracking is not enabled.
+    total_post_views: int | None = None
+
+    posts: list[DashboardPostStats] = Field(
+        default_factory=list
+    )

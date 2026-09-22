@@ -9,6 +9,7 @@ from app.database import Base, engine
 from app.routers import (
     auth,
     comments,
+    dashboard,
     likes,
     posts,
     subscriptions,
@@ -144,8 +145,9 @@ app = FastAPI(
     description=(
         "A mini blogging system with JWT authentication, "
         "posts, comments, likes, email notifications, "
-        "image uploads, search, pagination, and "
-        "subscription-based access control."
+        "image uploads, search, pagination, "
+        "subscription-based access control, "
+        "and user dashboard analytics."
     ),
     version="2.0.0",
 )
@@ -166,15 +168,29 @@ app.mount(
 # Include Routers
 # ============================================================
 
-app.include_router(auth.router)
+app.include_router(
+    auth.router
+)
 
-app.include_router(posts.router)
+app.include_router(
+    posts.router
+)
 
-app.include_router(comments.router)
+app.include_router(
+    comments.router
+)
 
-app.include_router(likes.router)
+app.include_router(
+    likes.router
+)
 
-app.include_router(subscriptions.router)
+app.include_router(
+    subscriptions.router
+)
+
+app.include_router(
+    dashboard.router
+)
 
 
 # ============================================================
