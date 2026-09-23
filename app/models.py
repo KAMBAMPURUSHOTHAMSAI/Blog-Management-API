@@ -112,41 +112,57 @@ class SubscriptionPlan(Base):
     # Model-level subscription checks
     # =====================================================
 
-    def can_create_post(self, current_post_count: int) -> bool:
+    def can_create_post(
+        self,
+        current_post_count: int,
+    ) -> bool:
         """
         Check whether the user can create another post.
         None means unlimited.
         """
+
         if self.max_posts is None:
             return True
 
         return current_post_count < self.max_posts
 
-    def can_upload_images(self, image_count: int) -> bool:
+    def can_upload_images(
+        self,
+        image_count: int,
+    ) -> bool:
         """
         Check whether the requested number of images
         is allowed for a post.
         """
+
         if self.max_images_per_post is None:
             return True
 
         return image_count <= self.max_images_per_post
 
-    def can_like(self, current_like_count: int) -> bool:
+    def can_like(
+        self,
+        current_like_count: int,
+    ) -> bool:
         """
         Check whether the user can like another post.
         None means unlimited.
         """
+
         if self.max_likes is None:
             return True
 
         return current_like_count < self.max_likes
 
-    def can_comment(self, current_comment_count: int) -> bool:
+    def can_comment(
+        self,
+        current_comment_count: int,
+    ) -> bool:
         """
         Check whether the user can add another comment.
         None means unlimited.
         """
+
         if self.max_comments is None:
             return True
 
@@ -156,6 +172,7 @@ class SubscriptionPlan(Base):
         """
         Returns True when all major limits are unlimited.
         """
+
         return (
             self.max_posts is None
             and self.max_images_per_post is None
@@ -255,6 +272,17 @@ class User(Base):
     )
 
     # =====================================================
+    # NEW: Notification Relationship
+    # =====================================================
+
+    notifications = relationship(
+        "Notification",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        order_by="Notification.created_at.desc()",
+    )
+
+    # =====================================================
     # Active Subscription Check
     # =====================================================
 
@@ -282,10 +310,14 @@ class User(Base):
         end_date = self.subscription_end_date
 
         if start_date is not None:
-            start_date = start_date.replace(tzinfo=None)
+            start_date = start_date.replace(
+                tzinfo=None
+            )
 
         if end_date is not None:
-            end_date = end_date.replace(tzinfo=None)
+            end_date = end_date.replace(
+                tzinfo=None
+            )
 
         # Check subscription start date
         if start_date is not None and now < start_date:
@@ -646,4 +678,82 @@ class BillingHistory(Base):
     plan = relationship(
         "SubscriptionPlan",
         back_populates="billing_history",
+    )
+
+
+# =========================================================
+# Notification Model
+# =========================================================
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True,
+    )
+
+    # =====================================================
+    # Notification Recipient
+    # =====================================================
+
+    user_id = Column(
+        Integer,
+        ForeignKey(
+            "users.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        index=True,
+    )
+
+    # =====================================================
+    # Notification Content
+    # =====================================================
+
+    message = Column(
+        Text,
+        nullable=False,
+    )
+
+    # Examples:
+    # like
+    # comment
+    # subscription
+    notification_type = Column(
+        String(50),
+        nullable=False,
+        index=True,
+    )
+
+    # =====================================================
+    # Read / Unread Status
+    # =====================================================
+
+    is_read = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        index=True,
+    )
+
+    # =====================================================
+    # Timestamp
+    # =====================================================
+
+    created_at = Column(
+        DateTime(timezone=True),
+        default=utc_now,
+        nullable=False,
+        index=True,
+    )
+
+    # =====================================================
+    # Relationship
+    # =====================================================
+
+    user = relationship(
+        "User",
+        back_populates="notifications",
     )

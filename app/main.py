@@ -11,6 +11,7 @@ from app.routers import (
     comments,
     dashboard,
     likes,
+    notifications,
     posts,
     subscriptions,
 )
@@ -145,7 +146,7 @@ app = FastAPI(
     description=(
         "A mini blogging system with JWT authentication, "
         "posts, comments, likes, email notifications, "
-        "image uploads, search, pagination, "
+        "in-app notifications, image uploads, search, pagination, "
         "subscription-based access control, "
         "and user dashboard analytics."
     ),
@@ -190,6 +191,10 @@ app.include_router(
 
 app.include_router(
     dashboard.router
+)
+
+app.include_router(
+    notifications.router
 )
 
 

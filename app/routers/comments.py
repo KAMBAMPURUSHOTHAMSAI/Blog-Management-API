@@ -12,6 +12,7 @@ from app.dependencies import get_current_user
 from app.models import Comment, Post, User
 from app.schemas import CommentCreate, CommentResponse
 from app.services.notification_service import (
+    create_comment_notification,
     send_comment_notification,
 )
 
@@ -107,20 +108,37 @@ def create_comment(
 
     db.add(comment)
 
+    # =====================================================
+    # Create In-App Notification
+    # =====================================================
+    #
+    # The notification is added to the same database
+    # transaction as the comment.
+    #
+    # No commit happens inside the helper function.
+    # =====================================================
+
+    create_comment_notification(
+        db=db,
+        owner_user_id=post.author_id,
+        post_title=post.title,
+        commenter_username=current_user.username,
+    )
+
+    # =====================================================
+    # Commit Comment + In-App Notification
+    # =====================================================
+
     db.commit()
 
     db.refresh(comment)
 
     # =====================================================
-    # Send Comment Notification
+    # Send Comment Email Notification
     # =====================================================
     #
-    # The comment has already been committed.
-    # Therefore comment.created_at contains the actual
-    # stored activity timestamp.
-    #
-    # BackgroundTasks ensures email sending does not
-    # block the API response.
+    # Email is still handled in the background.
+    # This keeps the API response fast.
     # =====================================================
 
     background_tasks.add_task(

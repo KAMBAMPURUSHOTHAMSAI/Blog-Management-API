@@ -14,6 +14,7 @@ from app.database import get_db
 from app.dependencies import get_current_user
 from app.models import Like, Post, User
 from app.services.notification_service import (
+    create_like_notification,
     send_like_notification,
 )
 
@@ -133,6 +134,25 @@ def like_post(
 
     db.add(like)
 
+    # =====================================================
+    # Create In-App Notification
+    # =====================================================
+    #
+    # The notification is added to the same transaction
+    # as the Like.
+    # =====================================================
+
+    create_like_notification(
+        db=db,
+        owner_user_id=post.author_id,
+        post_title=post.title,
+        liker_username=current_user.username,
+    )
+
+    # =====================================================
+    # Commit Like + In-App Notification
+    # =====================================================
+
     try:
         db.commit()
         db.refresh(like)
@@ -146,12 +166,11 @@ def like_post(
         )
 
     # =====================================================
-    # Send Like Notification in Background
+    # Send Like Email Notification in Background
     # =====================================================
     #
-    # The database operation has already succeeded.
-    # Email sending therefore cannot block the main
-    # like request.
+    # Email sending remains asynchronous so it does not
+    # delay the API response.
     # =====================================================
 
     background_tasks.add_task(

@@ -250,3 +250,32 @@ class DashboardResponse(BaseModel):
     posts: list[DashboardPostStats] = Field(
         default_factory=list
     )
+
+
+# =========================================================
+# Notification Schemas
+# =========================================================
+
+class NotificationResponse(BaseModel):
+    """
+    Response schema for a single user notification.
+    """
+
+    id: int
+    message: str
+    notification_type: str
+    is_read: bool
+    created_at: datetime
+
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
+
+
+class NotificationUnreadCountResponse(BaseModel):
+    """
+    Response schema for the number of unread
+    notifications belonging to the current user.
+    """
+
+    unread_count: int

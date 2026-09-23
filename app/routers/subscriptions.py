@@ -29,6 +29,9 @@ from app.schemas import (
     SubscriptionPlanResponse,
     SubscriptionResponse,
 )
+from app.services.notification_service import (
+    create_subscription_notification,
+)
 
 
 # =========================================================
@@ -277,8 +280,8 @@ def subscribe_to_plan(
     """
     Subscribe the authenticated user to a plan.
 
-    A billing record and fake invoice PDF are generated
-    for every subscription.
+    A billing record, fake invoice PDF and in-app
+    notification are generated for every subscription.
     """
 
     # -----------------------------------------------------
@@ -299,6 +302,19 @@ def subscribe_to_plan(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Subscription plan not found or inactive.",
         )
+
+    # -----------------------------------------------------
+    # Check existing subscription BEFORE updating it
+    # -----------------------------------------------------
+
+    had_active_subscription = (
+        current_user.has_active_subscription()
+    )
+
+    same_plan_renewal = (
+        had_active_subscription
+        and current_user.subscription_plan_id == plan.id
+    )
 
     # -----------------------------------------------------
     # Subscription dates
@@ -354,6 +370,33 @@ def subscribe_to_plan(
     )
 
     db.add(billing)
+
+    # -----------------------------------------------------
+    # Create In-App Subscription Notification
+    # -----------------------------------------------------
+    #
+    # Same active plan  -> renewed
+    # New/different plan -> activated
+    #
+    # Notification is added to the same transaction.
+    # -----------------------------------------------------
+
+    notification_action = (
+        "renewed"
+        if same_plan_renewal
+        else "activated"
+    )
+
+    create_subscription_notification(
+        db=db,
+        user_id=current_user.id,
+        plan_name=plan.name,
+        action=notification_action,
+    )
+
+    # -----------------------------------------------------
+    # Commit subscription + billing + notification
+    # -----------------------------------------------------
 
     db.commit()
 
