@@ -272,7 +272,7 @@ class User(Base):
     )
 
     # =====================================================
-    # NEW: Notification Relationship
+    # Notification Relationship
     # =====================================================
 
     notifications = relationship(
@@ -280,6 +280,17 @@ class User(Base):
         back_populates="user",
         cascade="all, delete-orphan",
         order_by="Notification.created_at.desc()",
+    )
+
+    # =====================================================
+    # AI Support Chat History Relationship
+    # =====================================================
+
+    ai_support_chats = relationship(
+        "AISupportChat",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        order_by="AISupportChat.created_at.desc()",
     )
 
     # =====================================================
@@ -756,4 +767,70 @@ class Notification(Base):
     user = relationship(
         "User",
         back_populates="notifications",
+    )
+
+
+# =========================================================
+# AI Support Chat History Model
+# =========================================================
+
+class AISupportChat(Base):
+    __tablename__ = "ai_support_chats"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True,
+    )
+
+    # =====================================================
+    # User who asked the question
+    # =====================================================
+
+    user_id = Column(
+        Integer,
+        ForeignKey(
+            "users.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        index=True,
+    )
+
+    # =====================================================
+    # User Question
+    # =====================================================
+
+    question = Column(
+        Text,
+        nullable=False,
+    )
+
+    # =====================================================
+    # AI Generated / Mocked Response
+    # =====================================================
+
+    ai_response = Column(
+        Text,
+        nullable=False,
+    )
+
+    # =====================================================
+    # Timestamp
+    # =====================================================
+
+    created_at = Column(
+        DateTime(timezone=True),
+        default=utc_now,
+        nullable=False,
+        index=True,
+    )
+
+    # =====================================================
+    # Relationship
+    # =====================================================
+
+    user = relationship(
+        "User",
+        back_populates="ai_support_chats",
     )

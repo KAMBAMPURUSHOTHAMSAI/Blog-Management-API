@@ -1,12 +1,14 @@
 from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 
 from app import models
 from app.database import Base, engine
 from app.routers import (
+    ai_support,
     auth,
     comments,
     dashboard,
@@ -146,11 +148,35 @@ app = FastAPI(
     description=(
         "A mini blogging system with JWT authentication, "
         "posts, comments, likes, email notifications, "
-        "in-app notifications, image uploads, search, pagination, "
-        "subscription-based access control, "
-        "and user dashboard analytics."
+        "in-app notifications, AI support, image uploads, "
+        "search, pagination, subscription-based access control, "
+        "billing, and user dashboard analytics."
     ),
-    version="2.0.0",
+    version="2.1.0",
+)
+
+
+# ============================================================
+# CORS Configuration
+# ============================================================
+
+app.add_middleware(
+    CORSMiddleware,
+
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+
+    allow_credentials=True,
+
+    allow_methods=[
+        "*",
+    ],
+
+    allow_headers=[
+        "*",
+    ],
 )
 
 
@@ -195,6 +221,10 @@ app.include_router(
 
 app.include_router(
     notifications.router
+)
+
+app.include_router(
+    ai_support.router
 )
 
 

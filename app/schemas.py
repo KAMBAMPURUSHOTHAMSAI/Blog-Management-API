@@ -279,3 +279,61 @@ class NotificationUnreadCountResponse(BaseModel):
     """
 
     unread_count: int
+
+
+# =========================================================
+# AI Support Schemas
+# =========================================================
+
+class AISupportRequest(BaseModel):
+    """
+    Request schema for the AI Support Chat.
+
+    The authenticated user sends a question/message
+    to the AI Support Assistant.
+    """
+
+    message: str = Field(
+        min_length=1,
+        max_length=2000,
+        description="User question or support message",
+    )
+
+
+class AISupportResponse(BaseModel):
+    """
+    Response schema returned by the AI Support API.
+    """
+
+    reply: str
+
+
+class AISupportChatResponse(BaseModel):
+    """
+    Response schema for a saved AI Support chat record.
+    """
+
+    id: int
+
+    user_id: int
+
+    question: str
+
+    ai_response: str
+
+    created_at: datetime
+
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
+
+
+class AISupportChatListResponse(BaseModel):
+    """
+    Response schema for the authenticated user's
+    AI Support chat history.
+    """
+
+    chats: list[AISupportChatResponse] = Field(
+        default_factory=list
+    )

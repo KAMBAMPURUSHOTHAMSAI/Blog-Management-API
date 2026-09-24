@@ -751,7 +751,365 @@
                 right: -4px;
             }
         }
-    </style>
+    
+
+        /* =================================================
+           AI SUPPORT CHAT
+           ================================================= */
+
+        .ai-support-container {
+            position: fixed;
+            right: 24px;
+            bottom: 24px;
+            z-index: 2000;
+        }
+
+        .ai-support-toggle {
+            width: 58px;
+            height: 58px;
+            border: none;
+            border-radius: 50%;
+            background: #7c3aed;
+            color: white;
+            font-size: 25px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow:
+                0 10px 25px
+                rgba(15, 23, 42, 0.20);
+            transition:
+                transform 0.2s ease,
+                box-shadow 0.2s ease;
+        }
+
+        .ai-support-toggle:hover {
+            transform: translateY(-2px);
+            box-shadow:
+                0 14px 30px
+                rgba(15, 23, 42, 0.25);
+        }
+
+        .ai-support-window {
+            position: absolute;
+            right: 0;
+            bottom: 72px;
+
+            width: 380px;
+            max-width: calc(100vw - 30px);
+            height: 540px;
+
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 18px;
+
+            box-shadow:
+                0 20px 50px
+                rgba(15, 23, 42, 0.20);
+
+            overflow: hidden;
+
+            display: none;
+            flex-direction: column;
+        }
+
+        .ai-support-window.open {
+            display: flex;
+        }
+
+        .ai-support-header {
+            padding: 15px 16px;
+            background: #7c3aed;
+            color: white;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .ai-support-title-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .ai-support-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.18);
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-size: 19px;
+        }
+
+        .ai-support-title {
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .ai-support-subtitle {
+            font-size: 11px;
+            margin-top: 2px;
+            opacity: 0.88;
+        }
+
+        .ai-support-close {
+            width: 32px;
+            height: 32px;
+
+            border: none;
+            border-radius: 8px;
+
+            background: transparent;
+            color: white;
+
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .ai-support-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            background: #f8fafc;
+            scroll-behavior: smooth;
+        }
+
+        .ai-support-welcome {
+            text-align: center;
+            color: #6b7280;
+            font-size: 13px;
+            padding: 12px 10px 15px;
+            line-height: 1.5;
+        }
+
+        .ai-message-row {
+            display: flex;
+            margin-bottom: 12px;
+        }
+
+        .ai-message-row.user {
+            justify-content: flex-end;
+        }
+
+        .ai-message-row.assistant {
+            justify-content: flex-start;
+        }
+
+        .ai-message {
+            max-width: 82%;
+            padding: 11px 13px;
+            border-radius: 14px;
+            font-size: 13px;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+        .ai-message.user {
+            background: #7c3aed;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .ai-message.assistant {
+            background: white;
+            color: #1f2937;
+            border: 1px solid #e5e7eb;
+            border-bottom-left-radius: 4px;
+
+            box-shadow:
+                0 3px 10px
+                rgba(15, 23, 42, 0.04);
+        }
+
+        .ai-message-time {
+            margin-top: 5px;
+            font-size: 10px;
+            opacity: 0.65;
+            text-align: right;
+        }
+
+        .ai-support-suggestions {
+            padding: 0 14px 12px;
+
+            display: flex;
+            flex-wrap: wrap;
+
+            gap: 7px;
+
+            background: #f8fafc;
+        }
+
+        .ai-support-suggestion {
+            border: 1px solid #ddd6fe;
+            background: white;
+            color: #6d28d9;
+
+            border-radius: 999px;
+
+            padding: 7px 10px;
+
+            font-size: 11px;
+            cursor: pointer;
+
+            transition:
+                background 0.15s ease,
+                transform 0.15s ease;
+        }
+
+        .ai-support-suggestion:hover {
+            background: #f5f3ff;
+            transform: translateY(-1px);
+        }
+
+        .ai-support-typing {
+            display: none;
+            padding: 0 16px 10px;
+            background: #f8fafc;
+            color: #6b7280;
+            font-size: 11px;
+        }
+
+        .ai-support-typing.show {
+            display: block;
+        }
+
+        .ai-support-system-message {
+            display: none;
+
+            margin: 10px 14px;
+
+            padding: 10px 12px;
+
+            border-radius: 10px;
+
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .ai-support-system-message.info {
+            background: #eff6ff;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+        }
+
+        .ai-support-system-message.error {
+            background: #fef2f2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+        }
+
+        .ai-support-input-area {
+            padding: 12px;
+            background: white;
+
+            border-top:
+                1px solid #e5e7eb;
+
+            display: flex;
+            gap: 8px;
+        }
+
+        .ai-support-input {
+            flex: 1;
+            min-width: 0;
+
+            border: 1px solid #d1d5db;
+
+            border-radius: 12px;
+
+            padding: 10px 12px;
+
+            font-size: 13px;
+            font-family: inherit;
+
+            outline: none;
+
+            resize: none;
+
+            min-height: 42px;
+            max-height: 90px;
+        }
+
+        .ai-support-input:focus {
+            border-color: #7c3aed;
+
+            box-shadow:
+                0 0 0 3px
+                rgba(124, 58, 237, 0.10);
+        }
+
+        .ai-support-send {
+            width: 44px;
+            min-width: 44px;
+            height: 42px;
+
+            border: none;
+            border-radius: 11px;
+
+            background: #7c3aed;
+            color: white;
+
+            font-size: 17px;
+
+            cursor: pointer;
+        }
+
+        .ai-support-send:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        .ai-support-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .ai-support-messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .ai-support-messages::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 999px;
+        }
+
+        @media (max-width: 650px) {
+
+            .ai-support-container {
+                right: 15px;
+                bottom: 15px;
+            }
+
+            .ai-support-toggle {
+                width: 54px;
+                height: 54px;
+            }
+
+            .ai-support-window {
+                right: -3px;
+                bottom: 66px;
+
+                width: calc(100vw - 24px);
+                height: 500px;
+
+                border-radius: 16px;
+            }
+        }
+
+        @media (max-width: 400px) {
+
+            .ai-support-window {
+                width: calc(100vw - 18px);
+                right: -4px;
+            }
+        }
+</style>
 </head>
 
 <body>
@@ -1259,6 +1617,10 @@
             "aria-expanded",
             "false"
         );
+
+        if (typeof resetAISupportChat === "function") {
+            resetAISupportChat();
+        }
 
         if (engagementChart) {
 
@@ -2301,6 +2663,882 @@
             }
         }
     );
+</script>
+
+
+
+<!-- =========================================================
+     AI SUPPORT CHAT
+     ========================================================= -->
+
+<div
+    id="aiSupportContainer"
+    class="ai-support-container"
+>
+
+    <!-- =====================================================
+         AI Support Chat Window
+         ===================================================== -->
+
+    <div
+        id="aiSupportWindow"
+        class="ai-support-window"
+        role="dialog"
+        aria-label="AI Support Chat"
+    >
+
+        <div class="ai-support-header">
+
+            <div class="ai-support-title-area">
+
+                <div class="ai-support-avatar">
+                    🤖
+                </div>
+
+                <div>
+
+                    <div class="ai-support-title">
+                        AI Support
+                    </div>
+
+                    <div class="ai-support-subtitle">
+                        Instant platform assistance
+                    </div>
+
+                </div>
+
+            </div>
+
+            <button
+                type="button"
+                id="aiSupportClose"
+                class="ai-support-close"
+                aria-label="Close AI Support"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <div
+            id="aiSupportMessages"
+            class="ai-support-messages"
+        >
+
+            <div
+                id="aiSupportWelcome"
+                class="ai-support-welcome"
+            >
+                Hi! 👋<br>
+                Ask me about posts, subscriptions,
+                billing, dashboard, notifications,
+                likes, comments, or other platform features.
+            </div>
+
+        </div>
+
+
+        <div
+            id="aiSupportTyping"
+            class="ai-support-typing"
+        >
+            AI Support is thinking...
+        </div>
+
+
+        <div
+            id="aiSupportSystemMessage"
+            class="ai-support-system-message info"
+        ></div>
+
+
+        <div class="ai-support-suggestions">
+
+            <button
+                type="button"
+                class="ai-support-suggestion"
+                data-question="How can I create a post?"
+            >
+                Create Post
+            </button>
+
+            <button
+                type="button"
+                class="ai-support-suggestion"
+                data-question="How do subscriptions work?"
+            >
+                Subscription
+            </button>
+
+            <button
+                type="button"
+                class="ai-support-suggestion"
+                data-question="How does billing work?"
+            >
+                Billing
+            </button>
+
+            <button
+                type="button"
+                class="ai-support-suggestion"
+                data-question="What does the dashboard show?"
+            >
+                Dashboard
+            </button>
+
+        </div>
+
+
+        <div class="ai-support-input-area">
+
+            <textarea
+                id="aiSupportInput"
+                class="ai-support-input"
+                placeholder="Ask your question..."
+                rows="1"
+                maxlength="2000"
+            ></textarea>
+
+            <button
+                type="button"
+                id="aiSupportSend"
+                class="ai-support-send"
+                aria-label="Send message"
+                title="Send message"
+            >
+                ➤
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         AI Support Floating Button
+         ===================================================== -->
+
+    <button
+        type="button"
+        id="aiSupportToggle"
+        class="ai-support-toggle"
+        aria-label="Open AI Support"
+        aria-expanded="false"
+        title="AI Support"
+    >
+        🤖
+    </button>
+
+</div>
+
+
+<script>
+
+    // =====================================================
+    // AI SUPPORT CHAT
+    // =====================================================
+
+    (function () {
+
+        "use strict";
+
+        const AI_SUPPORT_API =
+            "/api/ai-support";
+
+        const AI_SUPPORT_HISTORY_API =
+            "/api/ai-support/history";
+
+        const TOKEN_KEY =
+            "dashboard_token";
+
+        let aiSupportSending =
+            false;
+
+        let aiSupportHistoryLoaded =
+            false;
+
+        let aiSupportLoadedToken =
+            null;
+
+
+        // =================================================
+        // Get JWT
+        // =================================================
+
+        function getAISupportToken() {
+
+            return localStorage.getItem(
+                TOKEN_KEY
+            );
+        }
+
+
+        // =================================================
+        // Elements
+        // =================================================
+
+        const aiSupportWindow =
+            document.getElementById(
+                "aiSupportWindow"
+            );
+
+        const aiSupportToggle =
+            document.getElementById(
+                "aiSupportToggle"
+            );
+
+        const aiSupportClose =
+            document.getElementById(
+                "aiSupportClose"
+            );
+
+        const aiSupportMessages =
+            document.getElementById(
+                "aiSupportMessages"
+            );
+
+        const aiSupportInput =
+            document.getElementById(
+                "aiSupportInput"
+            );
+
+        const aiSupportSend =
+            document.getElementById(
+                "aiSupportSend"
+            );
+
+        const aiSupportTyping =
+            document.getElementById(
+                "aiSupportTyping"
+            );
+
+        const aiSupportSystemMessage =
+            document.getElementById(
+                "aiSupportSystemMessage"
+            );
+
+
+        // =================================================
+        // Open Chat
+        // =================================================
+
+        async function openAISupport() {
+
+            const token =
+                getAISupportToken();
+
+            aiSupportWindow.classList.add(
+                "open"
+            );
+
+            aiSupportToggle.setAttribute(
+                "aria-expanded",
+                "true"
+            );
+
+            if (!token) {
+
+                showAISupportSystemMessage(
+                    "Please enter a valid JWT token and load the dashboard first.",
+                    "error"
+                );
+
+                return;
+            }
+
+            hideAISupportSystemMessage();
+
+            // If a different user/token is loaded, clear the
+            // previous user's chat history before loading the
+            // current user's history.
+            if (
+                aiSupportLoadedToken !== token
+            ) {
+                resetAISupportChat(false);
+            }
+
+            if (
+                !aiSupportHistoryLoaded
+            ) {
+
+                const historyLoaded =
+                    await loadAISupportHistory();
+
+                if (historyLoaded) {
+
+                    aiSupportHistoryLoaded =
+                        true;
+
+                    aiSupportLoadedToken =
+                        token;
+                }
+            }
+
+            focusAISupportInput();
+        }
+
+
+        // =================================================
+        // Close Chat
+        // =================================================
+
+        function closeAISupport() {
+
+            aiSupportWindow.classList.remove(
+                "open"
+            );
+
+            aiSupportToggle.setAttribute(
+                "aria-expanded",
+                "false"
+            );
+        }
+
+
+        // =================================================
+        // Send Message
+        // =================================================
+
+        async function sendAISupportMessage() {
+
+            if (
+                aiSupportSending
+            ) {
+                return;
+            }
+
+            const message =
+                aiSupportInput.value.trim();
+
+            if (!message) {
+                return;
+            }
+
+            const token =
+                getAISupportToken();
+
+            if (!token) {
+
+                showAISupportSystemMessage(
+                    "Please load the dashboard with a valid JWT token first.",
+                    "error"
+                );
+
+                return;
+            }
+
+            hideAISupportSystemMessage();
+
+            addAISupportMessage(
+                message,
+                "user"
+            );
+
+            aiSupportInput.value = "";
+
+            resetAISupportInputHeight();
+
+            setAISupportSendingState(
+                true
+            );
+
+            try {
+
+                const response =
+                    await fetch(
+                        `${AI_SUPPORT_API}/`,
+                        {
+                            method: "POST",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/json",
+
+                                "Authorization":
+                                    `Bearer ${token}`,
+
+                                "Accept":
+                                    "application/json"
+                            },
+
+                            body: JSON.stringify({
+                                message: message
+                            })
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        data.detail
+                        || "Unable to get AI support response."
+                    );
+                }
+
+                addAISupportMessage(
+                    data.reply
+                    || "Sorry, I could not generate a response.",
+                    "assistant"
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "AI Support Error:",
+                    error
+                );
+
+                addAISupportMessage(
+                    error.message
+                    || "Something went wrong. Please try again.",
+                    "assistant"
+                );
+
+            } finally {
+
+                setAISupportSendingState(
+                    false
+                );
+
+                focusAISupportInput();
+            }
+        }
+
+
+        // =================================================
+        // Load Saved Chat History
+        // =================================================
+
+        async function loadAISupportHistory() {
+
+            const token =
+                getAISupportToken();
+
+            if (!token) {
+                return;
+            }
+
+            try {
+
+                const response =
+                    await fetch(
+                        `${AI_SUPPORT_HISTORY_API}?limit=50`,
+                        {
+                            method: "GET",
+
+                            headers: {
+                                "Authorization":
+                                    `Bearer ${token}`,
+
+                                "Accept":
+                                    "application/json"
+                            },
+
+                            cache: "no-store"
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        data.detail
+                        || "Unable to load AI support history."
+                    );
+                }
+
+                const chats =
+                    Array.isArray(data.chats)
+                        ? data.chats
+                        : [];
+
+                chats
+                    .slice()
+                    .reverse()
+                    .forEach(
+                        chat => {
+
+                            addAISupportMessage(
+                                chat.question,
+                                "user",
+                                chat.created_at
+                            );
+
+                            addAISupportMessage(
+                                chat.ai_response,
+                                "assistant",
+                                chat.created_at
+                            );
+                        }
+                    );
+
+                scrollAISupportToBottom();
+
+                return true;
+
+            } catch (error) {
+
+                console.error(
+                    "AI Support History Error:",
+                    error
+                );
+
+                showAISupportSystemMessage(
+                    "Unable to load previous AI chat history.",
+                    "error"
+                );
+
+                return false;
+            }
+        }
+
+
+        // =================================================
+        // Add Message
+        // =================================================
+
+        function addAISupportMessage(
+            message,
+            type,
+            timestamp = null
+        ) {
+
+            const row =
+                document.createElement(
+                    "div"
+                );
+
+            row.className =
+                `ai-message-row ${type}`;
+
+            const bubble =
+                document.createElement(
+                    "div"
+                );
+
+            bubble.className =
+                `ai-message ${type}`;
+
+            // textContent prevents HTML injection.
+            bubble.textContent =
+                String(message);
+
+
+            const time =
+                document.createElement(
+                    "div"
+                );
+
+            time.className =
+                "ai-message-time";
+
+            time.textContent =
+                formatAISupportTime(
+                    timestamp
+                    || new Date().toISOString()
+                );
+
+            bubble.appendChild(
+                time
+            );
+
+            row.appendChild(
+                bubble
+            );
+
+            aiSupportMessages.appendChild(
+                row
+            );
+
+            scrollAISupportToBottom();
+        }
+
+
+        // =================================================
+        // Format Time
+        // =================================================
+
+        function formatAISupportTime(
+            timestamp
+        ) {
+
+            const date =
+                new Date(
+                    timestamp
+                );
+
+            if (
+                Number.isNaN(
+                    date.getTime()
+                )
+            ) {
+                return "";
+            }
+
+            return date.toLocaleTimeString(
+                [],
+                {
+                    hour: "2-digit",
+                    minute: "2-digit"
+                }
+            );
+        }
+
+
+        // =================================================
+        // Scroll
+        // =================================================
+
+        function scrollAISupportToBottom() {
+
+            aiSupportMessages.scrollTop =
+                aiSupportMessages.scrollHeight;
+        }
+
+
+        // =================================================
+        // Sending State
+        // =================================================
+
+        function setAISupportSendingState(
+            sending
+        ) {
+
+            aiSupportSending =
+                sending;
+
+            aiSupportSend.disabled =
+                sending;
+
+            aiSupportTyping.classList.toggle(
+                "show",
+                sending
+            );
+        }
+
+
+        // =================================================
+        // Textarea Resize
+        // =================================================
+
+        function resetAISupportInputHeight() {
+
+            aiSupportInput.style.height =
+                "auto";
+        }
+
+
+        function resizeAISupportInput() {
+
+            aiSupportInput.style.height =
+                "auto";
+
+            aiSupportInput.style.height =
+                Math.min(
+                    aiSupportInput.scrollHeight,
+                    90
+                ) + "px";
+        }
+
+
+        // =================================================
+        // Focus Input
+        // =================================================
+
+        function focusAISupportInput() {
+
+            setTimeout(
+                () => {
+                    aiSupportInput.focus();
+                },
+                50
+            );
+        }
+
+
+        // =================================================
+        // System Message
+        // =================================================
+
+        function showAISupportSystemMessage(
+            message,
+            type = "info"
+        ) {
+
+            aiSupportSystemMessage.textContent =
+                message;
+
+            aiSupportSystemMessage.className =
+                `ai-support-system-message ${type}`;
+
+            aiSupportSystemMessage.style.display =
+                "block";
+        }
+
+
+        function hideAISupportSystemMessage() {
+
+            aiSupportSystemMessage.style.display =
+                "none";
+        }
+
+
+        // =================================================
+        // Reset AI Support Chat
+        // =================================================
+
+        function resetAISupportChat(
+            showWelcome = true
+        ) {
+
+            if (!aiSupportMessages) {
+                return;
+            }
+
+            aiSupportMessages
+                .querySelectorAll(
+                    ".ai-message-row"
+                )
+                .forEach(
+                    messageRow => {
+                        messageRow.remove();
+                    }
+                );
+
+            aiSupportHistoryLoaded =
+                false;
+
+            aiSupportLoadedToken =
+                null;
+
+            aiSupportInput.value =
+                "";
+
+            resetAISupportInputHeight();
+
+            hideAISupportSystemMessage();
+
+            if (showWelcome) {
+
+                const welcome =
+                    document.createElement(
+                        "div"
+                    );
+
+                welcome.id =
+                    "aiSupportWelcome";
+
+                welcome.className =
+                    "ai-support-welcome";
+
+                welcome.textContent =
+                    "Hi! 👋 Ask me about posts, subscriptions, billing, dashboard, notifications, likes, comments, or other platform features.";
+
+                aiSupportMessages.prepend(
+                    welcome
+                );
+            }
+        }
+
+        // Expose only the reset helper so the existing
+        // dashboard Clear button can safely reset AI state.
+        window.resetAISupportChat =
+            resetAISupportChat;
+
+
+        // =================================================
+        // Suggestion Buttons
+        // =================================================
+
+        document
+            .querySelectorAll(
+                ".ai-support-suggestion"
+            )
+            .forEach(
+                button => {
+
+                    button.addEventListener(
+                        "click",
+                        function () {
+
+                            aiSupportInput.value =
+                                this.dataset.question
+                                || "";
+
+                            resizeAISupportInput();
+
+                            sendAISupportMessage();
+                        }
+                    );
+                }
+            );
+
+
+        // =================================================
+        // Events
+        // =================================================
+
+        aiSupportToggle.addEventListener(
+            "click",
+            function () {
+
+                if (
+                    aiSupportWindow.classList.contains(
+                        "open"
+                    )
+                ) {
+
+                    closeAISupport();
+
+                } else {
+
+                    openAISupport();
+                }
+            }
+        );
+
+
+        aiSupportClose.addEventListener(
+            "click",
+            closeAISupport
+        );
+
+
+        aiSupportSend.addEventListener(
+            "click",
+            sendAISupportMessage
+        );
+
+
+        aiSupportInput.addEventListener(
+            "input",
+            resizeAISupportInput
+        );
+
+
+        aiSupportInput.addEventListener(
+            "keydown",
+            function (event) {
+
+                if (
+                    event.key === "Enter"
+                    && !event.shiftKey
+                ) {
+
+                    event.preventDefault();
+
+                    sendAISupportMessage();
+                }
+            }
+        );
+
+    })();
 </script>
 
 </body>
