@@ -214,6 +214,28 @@ class User(Base):
     )
 
     # =====================================================
+    # Auth0 / Social Login Information
+    # =====================================================
+
+    # Authentication provider
+    # Examples:
+    # auth0
+    # google
+    # facebook
+    auth_provider = Column(
+        String(50),
+        nullable=True,
+        index=True,
+    )
+
+    # Unique user ID received from Auth0 provider
+    auth_provider_id = Column(
+        String(255),
+        nullable=True,
+        index=True,
+    )
+
+    # =====================================================
     # Active Subscription Information
     # =====================================================
 

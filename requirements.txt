@@ -6,3 +6,4 @@ pydantic-settings
 PyJWT
 pwdlib[argon2]
 python-multipart
+httpx

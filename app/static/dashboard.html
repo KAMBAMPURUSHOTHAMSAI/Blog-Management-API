@@ -1547,6 +1547,49 @@
 
 
     // =====================================================
+    // Handle Auth0 Callback Token
+    // =====================================================
+
+    function handleAuth0CallbackToken() {
+
+        const hash = window.location.hash;
+
+        if (
+            !hash ||
+            !hash.startsWith("#")
+        ) {
+            return null;
+        }
+
+        const params = new URLSearchParams(
+            hash.substring(1)
+        );
+
+        const auth0Token =
+            params.get("access_token");
+
+        if (!auth0Token) {
+            return null;
+        }
+
+        // Save Auth0-issued application JWT
+        // using the existing dashboard token storage
+        saveToken(auth0Token);
+
+        // Remove the token from the browser URL
+        // after saving it
+        window.history.replaceState(
+            null,
+            document.title,
+            window.location.pathname
+                + window.location.search
+        );
+
+        return auth0Token;
+    }
+
+
+    // =====================================================
     // Clear Token
     // =====================================================
 
@@ -2644,15 +2687,21 @@
 
 
     // =====================================================
-    // Auto-load Saved Token
+    // Auto Login
+    // Auth0 Callback + Saved JWT
     // =====================================================
 
     window.addEventListener(
         "DOMContentLoaded",
         () => {
 
+            // Check Auth0 callback token first
+            const auth0Token =
+                handleAuth0CallbackToken();
+
+            // Otherwise use an existing saved token
             const savedToken =
-                getToken();
+                auth0Token || getToken();
 
             if (savedToken) {
 

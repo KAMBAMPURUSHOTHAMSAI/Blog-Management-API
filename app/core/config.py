@@ -35,18 +35,30 @@ class Settings(BaseSettings):
     # -----------------------------------------------------
     # SMTP Security
     # -----------------------------------------------------
-    # Gmail:
-    #   SMTP_SSL = True
-    #   SMTP_TLS = False
-    #
-    # Mailtrap Sandbox:
-    #   SMTP_SSL = False
-    #   SMTP_TLS = True
-    # -----------------------------------------------------
 
     SMTP_SSL: bool = True
 
     SMTP_TLS: bool = False
+
+    # =====================================================
+    # Auth0 Configuration
+    # =====================================================
+
+    AUTH0_DOMAIN: str = ""
+
+    AUTH0_CLIENT_ID: str = ""
+
+    AUTH0_CLIENT_SECRET: str = ""
+
+    AUTH0_CALLBACK_URL: str = (
+        "http://127.0.0.1:8000/auth/callback/"
+    )
+
+    AUTH0_LOGOUT_URL: str = (
+        "http://127.0.0.1:8000/"
+    )
+
+    AUTH0_AUDIENCE: str = ""
 
     # =====================================================
     # Environment Configuration

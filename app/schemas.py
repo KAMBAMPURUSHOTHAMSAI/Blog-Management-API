@@ -26,6 +26,10 @@ class UserResponse(BaseModel):
     username: str
     email: EmailStr
 
+    # Auth0 / Social Login information
+    auth_provider: str | None = None
+    auth_provider_id: str | None = None
+
     model_config = ConfigDict(
         from_attributes=True,
     )
@@ -50,6 +54,35 @@ class LoginRequest(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+
+# =========================================================
+# Auth0 / Social Login Schemas
+# =========================================================
+
+class Auth0UserResponse(BaseModel):
+    """
+    User information received from Auth0
+    after successful Google/Facebook authentication.
+    """
+
+    sub: str
+    email: EmailStr | None = None
+    name: str | None = None
+    nickname: str | None = None
+    picture: str | None = None
+
+
+class SocialLoginResponse(BaseModel):
+    """
+    Response returned after successful Auth0
+    social authentication.
+    """
+
+    access_token: str
+    token_type: str
+
+    user: UserResponse
 
 
 # =========================================================

@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+    <title>Blog Management API - Authentication</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family:
+                Inter,
+                Arial,
+                Helvetica,
+                sans-serif;
+            background:
+                linear-gradient(
+                    135deg,
+                    #eef2ff,
+                    #f8fafc
+                );
+            color: #1f2937;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            padding: 24px;
+        }
+
+        .auth-container {
+            width: min(980px, 100%);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 24px;
+
+            overflow: hidden;
+
+            box-shadow:
+                0 24px 60px
+                rgba(15, 23, 42, 0.12);
+        }
+
+        .intro {
+            padding: 48px;
+            background:
+                linear-gradient(
+                    145deg,
+                    #1d4ed8,
+                    #4f46e5
+                );
+            color: white;
+
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .intro .logo {
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
+
+            background: rgba(
+                255,
+                255,
+                255,
+                0.16
+            );
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-size: 26px;
+            margin-bottom: 24px;
+        }
+
+        .intro h1 {
+            font-size: 34px;
+            line-height: 1.15;
+            margin-bottom: 14px;
+        }
+
+        .intro p {
+            font-size: 15px;
+            line-height: 1.7;
+            opacity: 0.9;
+            margin-bottom: 28px;
+        }
+
+        .feature-list {
+            display: grid;
+            gap: 12px;
+        }
+
+        .feature {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+
+        .feature-icon {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: rgba(
+                255,
+                255,
+                255,
+                0.16
+            );
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .auth-panel {
+            padding: 42px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+
+            background: #f3f4f6;
+            padding: 5px;
+            border-radius: 12px;
+
+            margin-bottom: 26px;
+        }
+
+        .tab {
+            flex: 1;
+            border: none;
+            background: transparent;
+
+            padding: 11px 14px;
+
+            border-radius: 9px;
+            cursor: pointer;
+
+            font-weight: 700;
+            color: #6b7280;
+        }
+
+        .tab.active {
+            background: white;
+            color: #1d4ed8;
+
+            box-shadow:
+                0 3px 10px
+                rgba(15, 23, 42, 0.08);
+        }
+
+        .panel-title {
+            font-size: 26px;
+            margin-bottom: 8px;
+        }
+
+        .panel-subtitle {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 22px;
+            line-height: 1.5;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 7px;
+        }
+
+        .form-group input {
+            width: 100%;
+
+            padding: 12px 13px;
+
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+
+            outline: none;
+            font-size: 14px;
+
+            transition:
+                border-color 0.15s ease,
+                box-shadow 0.15s ease;
+        }
+
+        .form-group input:focus {
+            border-color: #2563eb;
+
+            box-shadow:
+                0 0 0 3px
+                rgba(
+                    37,
+                    99,
+                    235,
+                    0.12
+                );
+        }
+
+        .primary-button {
+            width: 100%;
+            border: none;
+            border-radius: 10px;
+
+            padding: 13px 16px;
+
+            background: #2563eb;
+            color: white;
+
+            font-size: 14px;
+            font-weight: 700;
+
+            cursor: pointer;
+            margin-top: 5px;
+        }
+
+        .primary-button:hover {
+            opacity: 0.93;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+
+            margin: 22px 0;
+            color: #9ca3af;
+            font-size: 12px;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: #e5e7eb;
+        }
+
+        .social-buttons {
+            display: grid;
+            gap: 10px;
+        }
+
+        .social-button {
+            width: 100%;
+
+            border: 1px solid #d1d5db;
+            background: white;
+
+            border-radius: 10px;
+            padding: 12px;
+
+            cursor: pointer;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+
+            font-size: 14px;
+            font-weight: 700;
+            color: #374151;
+
+            text-decoration: none;
+        }
+
+        .social-button:hover {
+            background: #f8fafc;
+        }
+
+        .social-icon {
+            font-size: 18px;
+        }
+
+        .message {
+            min-height: 22px;
+            margin-top: 13px;
+
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .message.success {
+            color: #15803d;
+        }
+
+        .message.error {
+            color: #dc2626;
+        }
+
+        .helper-text {
+            text-align: center;
+            color: #6b7280;
+            font-size: 12px;
+            margin-top: 17px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .show-password {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+
+            margin: -3px 0 16px;
+
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .show-password input {
+            width: auto;
+        }
+
+        @media (max-width: 760px) {
+            .auth-container {
+                grid-template-columns: 1fr;
+            }
+
+            .intro {
+                padding: 34px;
+            }
+
+            .intro h1 {
+                font-size: 28px;
+            }
+
+            .feature-list {
+                display: none;
+            }
+
+            .auth-panel {
+                padding: 30px 24px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="auth-container">
+
+    <!-- =====================================================
+         Introduction
+         ===================================================== -->
+
+    <section class="intro">
+
+        <div class="logo">
+            ✍️
+        </div>
+
+        <h1>
+            Welcome to
+            Blog Management API
+        </h1>
+
+        <p>
+            Sign in to manage your blog posts,
+            subscriptions, notifications,
+            dashboard analytics and AI support.
+        </p>
+
+        <div class="feature-list">
+
+            <div class="feature">
+                <span class="feature-icon">✓</span>
+                <span>Secure JWT authentication</span>
+            </div>
+
+            <div class="feature">
+                <span class="feature-icon">✓</span>
+                <span>Google and Facebook login</span>
+            </div>
+
+            <div class="feature">
+                <span class="feature-icon">✓</span>
+                <span>Personalized dashboard</span>
+            </div>
+
+            <div class="feature">
+                <span class="feature-icon">✓</span>
+                <span>Subscriptions and billing</span>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         Authentication Panel
+         ===================================================== -->
+
+    <section class="auth-panel">
+
+        <div class="tabs">
+
+            <button
+                type="button"
+                id="loginTab"
+                class="tab active"
+                onclick="showPanel('login')"
+            >
+                Login
+            </button>
+
+            <button
+                type="button"
+                id="signupTab"
+                class="tab"
+                onclick="showPanel('signup')"
+            >
+                Sign Up
+            </button>
+
+        </div>
+
+
+        <!-- =================================================
+             Login Panel
+             ================================================= -->
+
+        <div id="loginPanel">
+
+            <h2 class="panel-title">
+                Welcome back
+            </h2>
+
+            <p class="panel-subtitle">
+                Sign in with your username and password,
+                or continue with a social account.
+            </p>
+
+            <form id="loginForm">
+
+                <div class="form-group">
+
+                    <label for="loginUsername">
+                        Username
+                    </label>
+
+                    <input
+                        type="text"
+                        id="loginUsername"
+                        placeholder="Enter your username"
+                        required
+                        minlength="3"
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="loginPassword">
+                        Password
+                    </label>
+
+                    <input
+                        type="password"
+                        id="loginPassword"
+                        placeholder="Enter your password"
+                        required
+                        minlength="6"
+                    >
+
+                </div>
+
+
+                <label class="show-password">
+
+                    <input
+                        type="checkbox"
+                        id="showLoginPassword"
+                    >
+
+                    Show password
+
+                </label>
+
+
+                <button
+                    type="submit"
+                    class="primary-button"
+                    id="loginButton"
+                >
+                    Login
+                </button>
+
+            </form>
+
+
+            <div class="divider">
+                OR
+            </div>
+
+
+            <div class="social-buttons">
+
+                <a
+                    class="social-button"
+                    href="/auth/auth0/login?connection=google-oauth2"
+                >
+                    <span class="social-icon">G</span>
+                    Continue with Google
+                </a>
+
+
+                <a
+                    class="social-button"
+                    href="/auth/auth0/login?connection=facebook"
+                >
+                    <span class="social-icon">f</span>
+                    Continue with Facebook
+                </a>
+
+            </div>
+
+
+            <div
+                id="loginMessage"
+                class="message"
+            ></div>
+
+        </div>
+
+
+        <!-- =================================================
+             Signup Panel
+             ================================================= -->
+
+        <div
+            id="signupPanel"
+            class="hidden"
+        >
+
+            <h2 class="panel-title">
+                Create account
+            </h2>
+
+            <p class="panel-subtitle">
+                Create your account using email,
+                username and password.
+            </p>
+
+            <form id="signupForm">
+
+                <div class="form-group">
+
+                    <label for="signupUsername">
+                        Name / Username
+                    </label>
+
+                    <input
+                        type="text"
+                        id="signupUsername"
+                        placeholder="Enter your name"
+                        required
+                        minlength="3"
+                        maxlength="50"
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="signupEmail">
+                        Email
+                    </label>
+
+                    <input
+                        type="email"
+                        id="signupEmail"
+                        placeholder="Enter your email"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="signupPassword">
+                        Password
+                    </label>
+
+                    <input
+                        type="password"
+                        id="signupPassword"
+                        placeholder="Minimum 6 characters"
+                        required
+                        minlength="6"
+                        maxlength="100"
+                    >
+
+                </div>
+
+
+                <label class="show-password">
+
+                    <input
+                        type="checkbox"
+                        id="showSignupPassword"
+                    >
+
+                    Show password
+
+                </label>
+
+
+                <button
+                    type="submit"
+                    class="primary-button"
+                    id="signupButton"
+                >
+                    Create Account
+                </button>
+
+            </form>
+
+
+            <div class="divider">
+                OR
+            </div>
+
+
+            <div class="social-buttons">
+
+                <a
+                    class="social-button"
+                    href="/auth/auth0/login?connection=google-oauth2"
+                >
+                    <span class="social-icon">G</span>
+                    Sign up with Google
+                </a>
+
+
+                <a
+                    class="social-button"
+                    href="/auth/auth0/login?connection=facebook"
+                >
+                    <span class="social-icon">f</span>
+                    Sign up with Facebook
+                </a>
+
+            </div>
+
+
+            <div
+                id="signupMessage"
+                class="message"
+            ></div>
+
+        </div>
+
+        <div class="helper-text">
+            Authentication is handled by the Blog Management API.
+        </div>
+
+    </section>
+
+</div>
+
+
+<script>
+    // =====================================================
+    // Panel Switching
+    // =====================================================
+
+    function showPanel(panel) {
+
+        const loginPanel =
+            document.getElementById(
+                "loginPanel"
+            );
+
+        const signupPanel =
+            document.getElementById(
+                "signupPanel"
+            );
+
+        const loginTab =
+            document.getElementById(
+                "loginTab"
+            );
+
+        const signupTab =
+            document.getElementById(
+                "signupTab"
+            );
+
+        if (panel === "signup") {
+
+            loginPanel.classList.add(
+                "hidden"
+            );
+
+            signupPanel.classList.remove(
+                "hidden"
+            );
+
+            loginTab.classList.remove(
+                "active"
+            );
+
+            signupTab.classList.add(
+                "active"
+            );
+
+        } else {
+
+            signupPanel.classList.add(
+                "hidden"
+            );
+
+            loginPanel.classList.remove(
+                "hidden"
+            );
+
+            signupTab.classList.remove(
+                "active"
+            );
+
+            loginTab.classList.add(
+                "active"
+            );
+        }
+    }
+
+
+    // =====================================================
+    // Show Password
+    // =====================================================
+
+    document.getElementById(
+        "showLoginPassword"
+    ).addEventListener(
+        "change",
+        function () {
+
+            document.getElementById(
+                "loginPassword"
+            ).type =
+                this.checked
+                    ? "text"
+                    : "password";
+        }
+    );
+
+
+    document.getElementById(
+        "showSignupPassword"
+    ).addEventListener(
+        "change",
+        function () {
+
+            document.getElementById(
+                "signupPassword"
+            ).type =
+                this.checked
+                    ? "text"
+                    : "password";
+        }
+    );
+
+
+    // =====================================================
+    // Redirect To Dashboard With JWT
+    // =====================================================
+
+    function openDashboard(accessToken) {
+
+        localStorage.setItem(
+            "dashboard_token",
+            accessToken
+        );
+
+        const dashboardUrl =
+            "/user/dashboard/page"
+            + "#access_token="
+            + encodeURIComponent(
+                accessToken
+            );
+
+        window.location.href =
+            dashboardUrl;
+    }
+
+
+    // =====================================================
+    // Login
+    // =====================================================
+
+    document.getElementById(
+        "loginForm"
+    ).addEventListener(
+        "submit",
+        async function (event) {
+
+            event.preventDefault();
+
+            const button =
+                document.getElementById(
+                    "loginButton"
+                );
+
+            const message =
+                document.getElementById(
+                    "loginMessage"
+                );
+
+            const username =
+                document.getElementById(
+                    "loginUsername"
+                ).value.trim();
+
+            const password =
+                document.getElementById(
+                    "loginPassword"
+                ).value;
+
+            message.className =
+                "message";
+
+            message.textContent =
+                "Signing in...";
+
+            button.disabled = true;
+
+            try {
+
+                const formData =
+                    new URLSearchParams();
+
+                formData.append(
+                    "username",
+                    username
+                );
+
+                formData.append(
+                    "password",
+                    password
+                );
+
+                const response =
+                    await fetch(
+                        "/auth/login",
+                        {
+                            method: "POST",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/x-www-form-urlencoded"
+                            },
+
+                            body: formData
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        data.detail
+                        || "Login failed."
+                    );
+                }
+
+                if (!data.access_token) {
+
+                    throw new Error(
+                        "Login succeeded but no access token was returned."
+                    );
+                }
+
+                message.className =
+                    "message success";
+
+                message.textContent =
+                    "Login successful. Opening dashboard...";
+
+                openDashboard(
+                    data.access_token
+                );
+
+            } catch (error) {
+
+                message.className =
+                    "message error";
+
+                message.textContent =
+                    error.message
+                    || "Unable to login.";
+
+            } finally {
+
+                button.disabled = false;
+            }
+        }
+    );
+
+
+    // =====================================================
+    // Signup
+    // =====================================================
+
+    document.getElementById(
+        "signupForm"
+    ).addEventListener(
+        "submit",
+        async function (event) {
+
+            event.preventDefault();
+
+            const button =
+                document.getElementById(
+                    "signupButton"
+                );
+
+            const message =
+                document.getElementById(
+                    "signupMessage"
+                );
+
+            const username =
+                document.getElementById(
+                    "signupUsername"
+                ).value.trim();
+
+            const email =
+                document.getElementById(
+                    "signupEmail"
+                ).value.trim();
+
+            const password =
+                document.getElementById(
+                    "signupPassword"
+                ).value;
+
+            message.className =
+                "message";
+
+            message.textContent =
+                "Creating your account...";
+
+            button.disabled = true;
+
+            try {
+
+                const response =
+                    await fetch(
+                        "/auth/signup",
+                        {
+                            method: "POST",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/json",
+                                "Accept":
+                                    "application/json"
+                            },
+
+                            body: JSON.stringify({
+                                username,
+                                email,
+                                password
+                            })
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        data.detail
+                        || "Signup failed."
+                    );
+                }
+
+                message.className =
+                    "message success";
+
+                message.textContent =
+                    "Account created successfully. Please login.";
+
+                document.getElementById(
+                    "signupForm"
+                ).reset();
+
+                setTimeout(
+                    () => {
+
+                        showPanel("login");
+
+                        document.getElementById(
+                            "loginUsername"
+                        ).value =
+                            username;
+
+                    },
+                    700
+                );
+
+            } catch (error) {
+
+                message.className =
+                    "message error";
+
+                message.textContent =
+                    error.message
+                    || "Unable to create account.";
+
+            } finally {
+
+                button.disabled = false;
+            }
+        }
+    );
+</script>
+
+</body>
+</html>
