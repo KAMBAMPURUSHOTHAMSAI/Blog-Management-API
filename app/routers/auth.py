@@ -1,6 +1,12 @@
-from pathlib import Path
+import base64
+import binascii
+import hashlib
+import hmac
+import json
 import secrets
+import time
 from datetime import timedelta
+from pathlib import Path
 from urllib.parse import quote, urlencode
 
 import httpx
@@ -8,12 +14,14 @@ import httpx
 from fastapi import (
     APIRouter,
     Depends,
+    Form,
     HTTPException,
     Request,
     status,
 )
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import EmailStr
 from sqlalchemy.orm import Session
 
 from app.auth import (
@@ -42,6 +50,13 @@ router = APIRouter(
 
 
 # ============================================================
+# Constants
+# ============================================================
+
+PENDING_SOCIAL_COOKIE = "pending_social_auth"
+
+
+# ============================================================
 # Authentication Web Page
 # ============================================================
 
@@ -67,6 +82,37 @@ def auth_page():
 
     return FileResponse(
         path=auth_file,
+        media_type="text/html",
+    )
+
+
+# ============================================================
+# Complete Social Profile Page
+# ============================================================
+
+@router.get(
+    "/complete-profile",
+    include_in_schema=False,
+)
+def complete_profile_page():
+    """
+    Serve the page used when Auth0 does not return
+    the user's email address.
+    """
+
+    profile_file = (
+        Path(__file__).resolve().parents[1]
+        / "static"
+        / "complete_profile.html"
+    )
+
+    if not profile_file.exists():
+        raise FileNotFoundError(
+            f"Complete profile page not found: {profile_file}"
+        )
+
+    return FileResponse(
+        path=profile_file,
         media_type="text/html",
     )
 
@@ -113,7 +159,6 @@ def create_unique_username(
     Create a unique local username for an Auth0 user.
     """
 
-    # Keep only safe username characters
     cleaned_username = "".join(
         character
         for character in base_username
@@ -172,8 +217,8 @@ def create_social_user(
     )
 
     # Social users do not use local password login.
-    # Generate a random password so existing DB structure
-    # remains unchanged.
+    # Generate a random password so the existing DB
+    # structure remains unchanged.
     random_password = secrets.token_urlsafe(32)
 
     hashed_password = hash_password(
@@ -195,12 +240,8 @@ def create_social_user(
         username=username,
         email=email,
         password=hashed_password,
-
-        # Auth0 / Social login information
         auth_provider=provider,
         auth_provider_id=provider_id,
-
-        # Automatically assign Basic plan
         subscription_plan_id=basic_plan.id,
         subscription_start_date=start_date,
         subscription_end_date=end_date,
@@ -211,6 +252,121 @@ def create_social_user(
     db.refresh(user)
 
     return user
+
+
+# ============================================================
+# Helper: Create Pending Social Login Token
+# ============================================================
+
+def create_pending_social_token(
+    provider: str,
+    provider_id: str,
+    name: str,
+) -> str:
+    """
+    Create a short-lived signed token used when
+    Auth0 does not return the email address.
+    """
+
+    payload = {
+        "provider": provider,
+        "provider_id": provider_id,
+        "name": name,
+        "exp": int(time.time()) + 600,  # 10 minutes
+    }
+
+    payload_json = json.dumps(
+        payload,
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode("utf-8")
+
+    encoded_payload = (
+        base64.urlsafe_b64encode(payload_json)
+        .decode("utf-8")
+        .rstrip("=")
+    )
+
+    signature = hmac.new(
+        settings.SECRET_KEY.encode("utf-8"),
+        encoded_payload.encode("utf-8"),
+        hashlib.sha256,
+    ).digest()
+
+    encoded_signature = (
+        base64.urlsafe_b64encode(signature)
+        .decode("utf-8")
+        .rstrip("=")
+    )
+
+    return f"{encoded_payload}.{encoded_signature}"
+
+
+# ============================================================
+# Helper: Verify Pending Social Login Token
+# ============================================================
+
+def verify_pending_social_token(
+    token: str,
+):
+    """
+    Verify the signed pending social login token.
+    """
+
+    try:
+        encoded_payload, encoded_signature = token.split(
+            ".",
+            1,
+        )
+
+        expected_signature = hmac.new(
+            settings.SECRET_KEY.encode("utf-8"),
+            encoded_payload.encode("utf-8"),
+            hashlib.sha256,
+        ).digest()
+
+        provided_signature = base64.urlsafe_b64decode(
+            encoded_signature
+            + "="
+            * (-len(encoded_signature) % 4)
+        )
+
+        if not hmac.compare_digest(
+            expected_signature,
+            provided_signature,
+        ):
+            return None
+
+        payload_bytes = base64.urlsafe_b64decode(
+            encoded_payload
+            + "="
+            * (-len(encoded_payload) % 4)
+        )
+
+        payload = json.loads(
+            payload_bytes.decode("utf-8")
+        )
+
+        if payload.get("exp", 0) < int(time.time()):
+            return None
+
+        if not payload.get("provider_id"):
+            return None
+
+        if not payload.get("provider"):
+            return None
+
+        return payload
+
+    except (
+        ValueError,
+        KeyError,
+        TypeError,
+        json.JSONDecodeError,
+        UnicodeDecodeError,
+        binascii.Error,
+    ):
+        return None
 
 
 # ============================================================
@@ -310,21 +466,15 @@ def register(
         username=user_data.username,
         email=user_data.email,
         password=hashed_password,
-
-        # Normal signup
         auth_provider=None,
         auth_provider_id=None,
-
-        # Basic subscription
         subscription_plan_id=basic_plan.id,
         subscription_start_date=start_date,
         subscription_end_date=end_date,
     )
 
     db.add(user)
-
     db.commit()
-
     db.refresh(user)
 
     return user
@@ -388,7 +538,7 @@ def login(
         )
 
     # ========================================================
-    # Create Existing Application JWT
+    # Create Application JWT
     # ========================================================
 
     access_token = create_access_token(
@@ -501,16 +651,196 @@ def auth0_login(
     )
 
     # ========================================================
-    # Store OAuth State In Secure HttpOnly Cookie
+    # Store OAuth State In Cookie
     # ========================================================
 
     redirect_response.set_cookie(
         key="auth0_state",
         value=state,
         httponly=True,
-        secure=False,      # False for local HTTP development
+        secure=False,
         samesite="lax",
         max_age=600,
+    )
+
+    return redirect_response
+
+
+# ============================================================
+# Complete Social Profile
+# ============================================================
+
+@router.post(
+    "/complete-profile",
+    include_in_schema=False,
+)
+def complete_profile(
+    request: Request,
+    email: EmailStr = Form(...),
+    db: Session = Depends(get_db),
+):
+    """
+    Complete the local profile when Auth0 does not
+    provide the email address.
+    """
+
+    # ========================================================
+    # Get Pending Social Session
+    # ========================================================
+
+    pending_token = request.cookies.get(
+        PENDING_SOCIAL_COOKIE
+    )
+
+    if not pending_token:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "Social login session has expired. "
+                "Please login again."
+            ),
+        )
+
+    # ========================================================
+    # Verify Pending Token
+    # ========================================================
+
+    payload = verify_pending_social_token(
+        pending_token
+    )
+
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired social login session.",
+        )
+
+    provider = payload["provider"]
+    provider_id = payload["provider_id"]
+    name = payload.get("name") or ""
+
+    normalized_email = (
+        str(email).strip().lower()
+    )
+
+    # ========================================================
+    # Check Existing Social Account
+    # ========================================================
+
+    existing_social_user = (
+        db.query(User)
+        .filter(
+            User.auth_provider_id == provider_id
+        )
+        .first()
+    )
+
+    if existing_social_user:
+
+        application_token = create_access_token(
+            existing_social_user.id
+        )
+
+        dashboard_url = (
+            "/user/dashboard/page"
+            f"#access_token="
+            f"{quote(application_token, safe='')}"
+        )
+
+        redirect_response = RedirectResponse(
+            url=dashboard_url,
+            status_code=status.HTTP_302_FOUND,
+        )
+
+        redirect_response.delete_cookie(
+            key=PENDING_SOCIAL_COOKIE
+        )
+
+        return redirect_response
+
+    # ========================================================
+    # Check Existing Email
+    # ========================================================
+
+    existing_email_user = (
+        db.query(User)
+        .filter(
+            User.email == normalized_email
+        )
+        .first()
+    )
+
+    # ========================================================
+    # Existing User Found
+    # Link Social Provider To Existing User
+    # ========================================================
+
+    if existing_email_user:
+
+        existing_email_user.auth_provider = provider
+        existing_email_user.auth_provider_id = provider_id
+
+        db.commit()
+        db.refresh(existing_email_user)
+
+        application_token = create_access_token(
+            existing_email_user.id
+        )
+
+        dashboard_url = (
+            "/user/dashboard/page"
+            f"#access_token="
+            f"{quote(application_token, safe='')}"
+        )
+
+        redirect_response = RedirectResponse(
+            url=dashboard_url,
+            status_code=status.HTTP_302_FOUND,
+        )
+
+        redirect_response.delete_cookie(
+            key=PENDING_SOCIAL_COOKIE
+        )
+
+        return redirect_response
+
+    # ========================================================
+    # Create New Social User
+    # ========================================================
+
+    user = create_social_user(
+        db=db,
+        name=name,
+        email=normalized_email,
+        provider=provider,
+        provider_id=provider_id,
+    )
+
+    # ========================================================
+    # Create Application JWT
+    # ========================================================
+
+    application_token = create_access_token(
+        user.id
+    )
+
+    # ========================================================
+    # Redirect To Dashboard
+    # ========================================================
+
+    dashboard_url = (
+        "/user/dashboard/page"
+        f"#access_token="
+        f"{quote(application_token, safe='')}"
+    )
+
+    redirect_response = RedirectResponse(
+        url=dashboard_url,
+        status_code=status.HTTP_302_FOUND,
+    )
+
+    redirect_response.delete_cookie(
+        key=PENDING_SOCIAL_COOKIE
     )
 
     return redirect_response
@@ -745,6 +1075,7 @@ def auth0_callback(
     # ========================================================
 
     provider_id = auth0_user.get("sub")
+
     email = auth0_user.get("email")
 
     name = (
@@ -757,15 +1088,6 @@ def auth0_callback(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Auth0 user ID is missing",
-        )
-
-    if not email:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=(
-                "Email address was not provided by "
-                "the social login provider"
-            ),
         )
 
     # ========================================================
@@ -787,6 +1109,81 @@ def auth0_callback(
             "|",
             1,
         )[0]
+
+    # ========================================================
+    # Social Email Fallback
+    # ========================================================
+
+    if not email:
+
+        # ====================================================
+        # Check Existing Social User
+        # ====================================================
+
+        existing_social_user = (
+            db.query(User)
+            .filter(
+                User.auth_provider_id == provider_id
+            )
+            .first()
+        )
+
+        # ====================================================
+        # Existing Social User
+        # ====================================================
+
+        if existing_social_user:
+
+            application_token = create_access_token(
+                existing_social_user.id
+            )
+
+            dashboard_url = (
+                "/user/dashboard/page"
+                f"#access_token="
+                f"{quote(application_token, safe='')}"
+            )
+
+            redirect_response = RedirectResponse(
+                url=dashboard_url,
+                status_code=status.HTTP_302_FOUND,
+            )
+
+            redirect_response.delete_cookie(
+                key="auth0_state"
+            )
+
+            return redirect_response
+
+        # ====================================================
+        # Create Pending Social Login Session
+        # ====================================================
+
+        pending_token = create_pending_social_token(
+            provider=provider,
+            provider_id=provider_id,
+            name=name,
+        )
+
+        redirect_response = RedirectResponse(
+            url="/auth/complete-profile",
+            status_code=status.HTTP_302_FOUND,
+        )
+
+        redirect_response.set_cookie(
+            key=PENDING_SOCIAL_COOKIE,
+            value=pending_token,
+            httponly=True,
+            secure=False,
+            samesite="lax",
+            max_age=600,
+        )
+
+        redirect_response.delete_cookie(
+            key="auth0_state"
+        )
+
+        return redirect_response
 
     # ========================================================
     # Find Existing Social User
@@ -841,7 +1238,7 @@ def auth0_callback(
             )
 
     # ========================================================
-    # Issue Existing Application JWT
+    # Issue Application JWT
     # ========================================================
 
     application_token = create_access_token(
@@ -849,13 +1246,11 @@ def auth0_callback(
     )
 
     # ========================================================
-    # Redirect To Dashboard With JWT
+    # Redirect To Dashboard
     # ========================================================
 
-    dashboard_path = "/user/dashboard/page"
-
     dashboard_url = (
-        f"{dashboard_path}"
+        "/user/dashboard/page"
         f"#access_token="
         f"{quote(application_token, safe='')}"
     )
@@ -866,7 +1261,7 @@ def auth0_callback(
     )
 
     # ========================================================
-    # Remove Temporary Auth0 State Cookie
+    # Remove Auth0 State Cookie
     # ========================================================
 
     redirect_response.delete_cookie(
